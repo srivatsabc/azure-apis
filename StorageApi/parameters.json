@@ -1,0 +1,7 @@
+{
+    "authority": "https://login.microsoftonline.com/ncmithungmail.onmicrosoft.com",
+    "client_id": "2c1e8fcd-fc8c-4f3d-8e85-92134f4f68ad",
+    "scope": ["https://graph.microsoft.com/.default"],
+    "secret": "WC7-O[Czx4p?d0N=FNP34l8P884L-.8S",
+    "endpoint": "https://mydemostorageacctsri123.blob.core.windows.net"
+}

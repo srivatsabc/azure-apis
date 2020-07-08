@@ -1,0 +1,6 @@
+Flask==1.1.1
+ObjDict==0.4.4
+requests==2.22.0
+configparser==4.0.2
+elastic-apm[flask]==5.3.2
+psutil==5.6.7
