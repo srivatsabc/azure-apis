@@ -16,7 +16,6 @@ config = json.load(open('app.properties'))
 #Overloaded returnError method for error handling
 def returnError(httpErrorCode, id, api, error=None):
     print('httpErrorCode: ' + str(httpErrorCode))
-    #endpoint_url = config.get(envType, envType + '.' + api + '.endpoint.url') + iata
     outputroot = config[str(httpErrorCode) + ".error.message"]
     outputroot['error']['endpoint'] = api
     if not error is None:
@@ -24,26 +23,27 @@ def returnError(httpErrorCode, id, api, error=None):
     outputroot_json = json.dumps(outputroot)
     return outputroot_json
 
-@app.route('/v1.0/links', methods=['GET'])
+@app.route('/v1.0/account-links', methods=['GET'])
 def returnAirportError():
     try:
-        raise IATAException
-    except IATAException:
+        raise LinkException
+    except LinkException:
         error = returnError(400, "<NULL>", "/api/v1/links")
         return Response(error, status=400, mimetype='application/json')
 
-@app.route('/v1.0/links/<string:id>', methods=['GET'])
-def returnAirportInfo(id):
+@app.route('/v1.0/account-links/<string:id>', methods=['GET'])
+def returnVendorAssociationsInfo(id):
     outputroot = {}
-    #Validate IATA
+    #Validate id
     try:
         if len(id) < 3:
-            raise IATAException
-    except IATAException:
+            raise LinkException
+    except LinkException:
         error = returnError(400, id)
         return Response(error, status=400, mimetype='application/json')
     else:
-        #If IATA Valid - Call the first system API on SAP Hana Cloud
+        #If Valid WID - Call the Graph Api
+        print ("headers : " + str(request.headers))
         try:
             oauth = msal.ConfidentialClientApplication(
                     config["client_id"], 
@@ -82,8 +82,9 @@ def returnAirportInfo(id):
             error = returnError(graph_response.status_code, id, api)
             return Response(error, status=graph_response.status_code, mimetype='application/json')
 
-        # Construct connection string
+        # Get Associations from DB 
         try:
+            # Connect to Azure SQL DB using MSI
             token = msi.gettoken(config["resource"])
             print("token: " + str(token))
             #conn = pyodbc.connect(dbAccessStr)
@@ -128,8 +129,8 @@ class Error(Exception):
    """Base class for other exceptions"""
    pass
 
-class IATAException(Error):
-   """Raised when the input IATA length is greater than 3"""
+class LinkException(Error):
+   """Raised when the input id length is greater than 3"""
    pass
 
 if __name__ == "__main__":

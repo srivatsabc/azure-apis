@@ -13,7 +13,6 @@ from azure.keyvault import KeyVaultClient
 from msrestazure.azure_active_directory import MSIAuthentication
 
 app = Flask(__name__)
-
 config = json.load(open('app.properties'))
 
 #Overloaded returnError method for error handling
@@ -27,19 +26,14 @@ def returnError(httpErrorCode, id, api, error=None):
     outputroot_json = json.dumps(outputroot)
     return outputroot_json
 
-@app.route('/v1.0/links', methods=['GET'])
-def returnAirportError():
-    try:
-        raise IATAException
-    except IATAException:
-        error = returnError(400, "<NULL>", "/api/v1/links")
-        return Response(error, status=400, mimetype='application/json')
-
-@app.route('/v1.0/links/<string:id>', methods=['GET'])
-def returnAirportInfo(id):
+@app.route('/v1.0/links', methods=['POST'])
+def returnAirportInfo():
     outputroot = {}
     #Validate IATA
     try:
+        print ("headers : " + str(request.headers))
+        id = request.headers.get('oid')
+        print ("oid : " + str(id))
         if len(id) < 3:
             raise IATAException
     except IATAException:
@@ -59,9 +53,18 @@ def returnAirportInfo(id):
                 logging.info("No suitable token exists in cache. Let's get a new one from AAD.")
                 result = oauth.acquire_token_for_client(scopes=config["scope"])
 
+            # Calling the graph api to patch opt_in and opt_in_dtae
             if "access_token" in result:
-                # Calling graph using the access token
-                api_url = config["graph.api.url"]
+                api_url = config["graph.api.patch.url"]
+                api = api_url.replace ("{id}", id)
+                print('graph_api_url : ' + api)
+                body['extension_6910a872576d4ce5973d76ba90fae9ef_opt_in'] = False
+                graph_patch = requests.patch(api, json.dumps(body), headers={'Authorization': 'Bearer ' + result['access_token']},)
+                print("Graph API Patch call result: " + str(graph_patch.status_code))
+
+            # Calling the graph api to patch updates
+            if "access_token" in result:
+                api_url = config["graph.api.request.url"]
                 api = api_url.replace ("{id}", id)
                 print('graph_api_url : ' + api)
                 graph_response = requests.get(api, headers={'Authorization': 'Bearer ' + result['access_token']},)
@@ -89,7 +92,7 @@ def returnAirportInfo(id):
         try:
             credentials = MSIAuthentication(resource="https://vault.azure.net")
             kvclient = KeyVaultClient(credentials)
-            azure_sql_db_connectionstring = kvclient.get_secret("https://myb2capikeyvault.vault.azure.net/", "dbconnectionstring", "").value
+            azure_sql_db_connectionstring = kvclient.get_secret("https://myb2capikvault.vault.azure.net/", "dbconnectionstring", "").value
             print(azure_sql_db_connectionstring)
             dbAccessStr = dbs.loads(azure_sql_db_connectionstring)
             print("dbAccessStr: " + dbAccessStr)
