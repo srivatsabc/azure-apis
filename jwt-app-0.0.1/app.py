@@ -5,6 +5,6 @@ encoded = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Imh1Tjk1SXZQZmVocTM0R3pCR
 claim = jwt.decode(encoded, verify=False)
 groups = claim.get('groups')
 if "1c096920-e90d-470e-8b2a-f412fab96e23" in groups:
-    print ("exists")
+    print ("exists!")
 else:
-    print ("does not exist")
+    print ("does not exist!")
