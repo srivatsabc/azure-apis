@@ -12,9 +12,8 @@ def index():
     id = str(request.headers.get('X-Ms-Client-Principal-Id'))
     print ("access_token: " + access_token)
     claim = jwt.decode(access_token, verify=False)
-    print (claim.get('groups')[0])
-
-    if claim.get('groups')[0] == "e1382625-f0f9-4860-ae7a-3af59b783352":
+    groups = claim.get('groups')
+    if "1c096920-e90d-470e-8b2a-f412fab96e23" in groups:
         return render_template('index.html')
     else:
         return render_template('error.html')

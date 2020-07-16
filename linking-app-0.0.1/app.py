@@ -27,19 +27,13 @@ def returnError(httpErrorCode, id, api, error=None):
     outputroot_json = json.dumps(outputroot)
     return outputroot_json
 
-@app.route('/v1.0/links', methods=['GET'])
-def returnAirportError():
-    try:
-        raise IATAException
-    except IATAException:
-        error = returnError(400, "<NULL>", "/api/v1/links")
-        return Response(error, status=400, mimetype='application/json')
-
-@app.route('/v1.0/links/<string:id>', methods=['GET'])
-def returnAirportInfo(id):
+@app.route('/v1.0/links', methods=['POST'])
+def returnAirportInfo():
     outputroot = {}
     #Validate IATA
     try:
+        id = str(request.headers.get('oid'))
+        tenant_id = str(request.headers.get('tenant-id'))
         if len(id) < 3:
             raise IATAException
     except IATAException:
@@ -47,7 +41,7 @@ def returnAirportInfo(id):
         return Response(error, status=400, mimetype='application/json')
     else:
         #If IATA Valid - Call the first system API on SAP Hana Cloud
-        try:
+        try:            
             oauth = msal.ConfidentialClientApplication(
                     config["client_id"], 
                     authority=config["authority"],
@@ -122,9 +116,15 @@ def returnAirportInfo(id):
 
         # Send response
         if name:
-            return Response(f"Hello {name}!", mimetype='application/json')
+            output_json = {}
+            output_json['message'] = "Hello " + name 
+            output_json['upn'] = graph_response_json.get('userPrincipalName')
+            return Response(json.dumps(output_json), mimetype='application/json')
         else:
-            return Response(f"Cannot send DB output", status=400, mimetype='application/json')
+            output_json = {}
+            output_json['error'] = "Cannot send DB output" 
+            output_json['upn'] = graph_response_json.get('userPrincipalName')
+            return Response(json.dumps(output_json), status=400, mimetype='application/json')
 
         #Convert to JSON
         #outputroot_json = json.dumps(graph_response_json)
